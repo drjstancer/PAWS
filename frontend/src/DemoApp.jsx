@@ -1,5 +1,7 @@
-import { useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts'
+import AdminConsole from './AdminConsole'
+import DataEntryWorkspace from './DataEntryWorkspace'
 import './demo.css'
 
 const CYCLE = '2025-2026'
@@ -54,10 +56,10 @@ function countBy(key, data = students) {
   }, {}))
 }
 
-export default function DemoApp() {
+export default function DemoApp({ user }) {
   const [view, setView] = useState('dashboard')
   const [selectedId, setSelectedId] = useState(1)
-  const [canViewRestricted, setCanViewRestricted] = useState(false)
+  const canViewRestricted = user?.permissions?.includes('Advising.ViewRestricted') || false
 
   const selectedStudent = students.find(s => s.id === Number(selectedId)) || students[0]
   const studentNotes = advising.filter(a => a.studentId === selectedStudent.id && (!a.restricted || canViewRestricted))
@@ -88,20 +90,37 @@ export default function DemoApp() {
         <button className={view === 'shadowing' ? 'active' : ''} onClick={() => setView('shadowing')}>Shadowing</button>
         <button className={view === 'analytics' ? 'active' : ''} onClick={() => setView('analytics')}>Analytics</button>
         <button className={view === 'exports' ? 'active' : ''} onClick={() => setView('exports')}>Exports</button>
+        <button className={view === 'admin' ? 'active' : ''} onClick={() => setView('admin')}> Admin</button>
+        <button className={view === 'workspace' ? 'active' : ''} onClick={() => setView('workspace')}> Workspace</button>
+
       </aside>
 
       <main className="demo-main">
         <header className="demo-header">
           <div><p>JPAWS / PAWS</p><h1>{titleFor(view)}</h1></div>
-          <div className="header-actions"><span>{CYCLE}</span><button>Refresh Demo</button></div>
+          <div className="header-actions">
+  <span>{user?.role}</span>
+  <span>{CYCLE}</span>
+  <button>Refresh Demo</button>
+</div>
         </header>
 
         {view === 'dashboard' && <Dashboard avgGpa={avgGpa} complianceRate={complianceRate} ruralPct={ruralPct} missingItems={missingItems} riskSummary={riskSummary} />}
         {view === 'students' && <Students />}
-        {view === 'advising' && <Advising selectedId={selectedId} setSelectedId={setSelectedId} selectedStudent={selectedStudent} studentNotes={studentNotes} canViewRestricted={canViewRestricted} setCanViewRestricted={setCanViewRestricted} />}
+        {view === 'advising' && (
+  <Advising
+    selectedId={selectedId}
+    setSelectedId={setSelectedId}
+    selectedStudent={selectedStudent}
+    studentNotes={studentNotes}
+    canViewRestricted={user?.permissions?.includes('Advising.ViewRestricted')}
+  />
+)}
         {view === 'shadowing' && <Shadowing />}
         {view === 'analytics' && <Analytics riskSummary={riskSummary} />}
         {view === 'exports' && <Exports />}
+        {view === 'admin' && <AdminConsole />}
+        {view === 'workspace' && <DataEntryWorkspace />}
       </main>
     </div>
   )
@@ -127,11 +146,13 @@ function Students() {
   return <Card title="Student Master List"><table><thead><tr><th>Name</th><th>Program</th><th>Classification</th><th>GPA</th><th>Science GPA</th><th>RUCA</th><th>HTM</th></tr></thead><tbody>{students.map(s => <tr key={s.id}><td><strong>{s.firstName} {s.lastName}</strong><br/><span>{s.email}</span></td><td>{s.programTrack}</td><td>{s.classification}</td><td>{s.cumulativeGpa}</td><td>{s.scienceGpa}</td><td>{s.rucaCode} · {s.rucaCategory}</td><td>{s.htmAdvisor}</td></tr>)}</tbody></table></Card>
 }
 
-function Advising({ selectedId, setSelectedId, selectedStudent, studentNotes, canViewRestricted, setCanViewRestricted }) {
+function Advising({ selectedId, setSelectedId, selectedStudent, studentNotes, canViewRestricted }) {
   return <section className="grid two uneven">
     <Card title="Advising Controls">
       <label>Student<select value={selectedId} onChange={e => setSelectedId(e.target.value)}>{students.map(s => <option key={s.id} value={s.id}>{s.lastName}, {s.firstName}</option>)}</select></label>
-      <div className="toggle-row"><span>Restricted Note Permission</span><button className={canViewRestricted ? 'toggle on' : 'toggle'} onClick={() => setCanViewRestricted(!canViewRestricted)}>{canViewRestricted ? 'Enabled' : 'Hidden'}</button></div>
+      <div className="toggle-row"><span>Restricted Note Permission</span><button className={canViewRestricted ? 'toggle on' : 'toggle'} disabled>
+  {canViewRestricted ? 'Enabled' : 'Hidden'}
+</button></div>
       <div className="student-card"><h3>{selectedStudent.firstName} {selectedStudent.lastName}</h3><p>{selectedStudent.programTrack} · {selectedStudent.classification}</p><p>HTM: {selectedStudent.htmAdvisor}</p></div>
     </Card>
     <Card title="Advising Notes">

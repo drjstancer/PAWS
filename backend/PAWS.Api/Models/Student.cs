@@ -7,10 +7,21 @@ namespace PAWS.Api.Models
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
+
         public string ProgramTrack { get; set; } = string.Empty;
         public string Classification { get; set; } = string.Empty;
+        public int CohortYear { get; set; }
+
         public string Status { get; set; } = "Active";
+
         public decimal? CumulativeGpa { get; set; }
         public decimal? ScienceGpa { get; set; }
+
+        public int? RucaCode { get; set; }
+        public string? RucaCategory { get; set; }
+
+        public string? HtmAdvisor { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

@@ -5,7 +5,9 @@ namespace PAWS.Api.Models
         public int Id { get; set; }
         public int StudentId { get; set; }
         public int RequirementId { get; set; }
+        public string RequirementCycle { get; set; } = string.Empty;
         public string Status { get; set; } = "Not Started";
         public DateTime? CompletionDate { get; set; }
+        public string? Notes { get; set; }
     }
 }

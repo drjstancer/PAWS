@@ -16,9 +16,17 @@ namespace PAWS.Api.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetStudents()
+        public IActionResult GetStudents(string? program, string? classification)
         {
-            return Ok(_context.Students.ToList());
+            var query = _context.Students.AsQueryable();
+
+            if (!string.IsNullOrEmpty(program))
+                query = query.Where(s => s.ProgramTrack == program);
+
+            if (!string.IsNullOrEmpty(classification))
+                query = query.Where(s => s.Classification == classification);
+
+            return Ok(query.ToList());
         }
 
         [HttpPost]

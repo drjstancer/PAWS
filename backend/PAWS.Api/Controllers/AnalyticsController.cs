@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using PAWS.Api.Data;
+using PAWS.Api.Security;
 
 namespace PAWS.Api.Controllers
 {
     [ApiController]
     [Route("api/analytics")]
+    [RequirePermission("Analytics.View")]
     public class AnalyticsController : ControllerBase
     {
         private readonly PawsDbContext _context;

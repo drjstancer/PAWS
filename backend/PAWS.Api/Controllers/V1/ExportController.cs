@@ -11,12 +11,14 @@ namespace PAWS.Api.Controllers.V1
     {
         private readonly PawsDbContext _db;
         private readonly CsvExportService _csv;
+        private readonly XlsxExportService _xlsx;
         private readonly AuditService _audit;
 
-        public ExportController(PawsDbContext db, CsvExportService csv, AuditService audit)
+        public ExportController(PawsDbContext db, CsvExportService csv, XlsxExportService xlsx, AuditService audit)
         {
             _db = db;
             _csv = csv;
+            _xlsx = xlsx;
             _audit = audit;
         }
 
@@ -63,6 +65,16 @@ namespace PAWS.Api.Controllers.V1
             var file = _csv.Alumni(_db);
             _audit.Log("EXPORT", "Alumni", null, null);
             return File(file, "text/csv", "alumni.csv");
+        }
+
+        [HttpGet("workbook")]
+        [RequirePermission("Reports.Export")]
+        public IActionResult Workbook(string? cycle)
+        {
+            var file = _xlsx.FullWorkbook(_db, cycle);
+            _audit.Log("EXPORT", "Workbook", null, new { cycle });
+            var fileName = $"PAWS_Workbook_{cycle ?? "All"}_{DateTime.UtcNow:yyyyMMdd}.xlsx";
+            return File(file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
         }
     }
 }

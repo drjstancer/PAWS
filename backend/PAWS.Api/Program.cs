@@ -16,6 +16,8 @@ builder.Services.AddDbContext<PawsDbContext>(options =>
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<AuditService>();
 builder.Services.AddScoped<ReportService>();
+builder.Services.AddScoped<CsvExportService>();
+builder.Services.AddScoped<XlsxExportService>();
 
 var app = builder.Build();
 

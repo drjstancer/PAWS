@@ -1,11 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using PAWS.Api.Data;
 using PAWS.Api.Models;
+using PAWS.Api.Security;
+using PAWS.Api.Validation;
 
 namespace PAWS.Api.Controllers
 {
     [ApiController]
     [Route("api/advanced-analytics")]
+    [RequirePermission("Analytics.View")]
     public class AdvancedAnalyticsController : ControllerBase
     {
         private readonly PawsDbContext _context;
@@ -18,6 +21,9 @@ namespace PAWS.Api.Controllers
         [HttpGet("risk-signals")]
         public IActionResult GetRiskSignals(string cycle)
         {
+            if (string.IsNullOrWhiteSpace(cycle))
+                return BadRequest(ErrorResponses.Validation("Cycle is required", new ValidationError { Field = "cycle", Issue = "Cycle must be provided" }));
+
             var students = _context.Students.ToList();
             var reqs = _context.StudentRequirementStatuses.Where(r => r.RequirementCycle == cycle).ToList();
 
@@ -70,11 +76,14 @@ namespace PAWS.Api.Controllers
         public IActionResult GetPublicationTable()
         {
             var data = _context.Students
+                .ToList()
                 .GroupBy(s => s.ProgramTrack)
                 .Select(g => new {
                     Program = g.Key,
                     Count = g.Count(),
-                    AvgGpa = g.Where(x => x.CumulativeGpa.HasValue).Average(x => x.CumulativeGpa)
+                    AvgGpa = g.Any(x => x.CumulativeGpa.HasValue)
+                        ? Math.Round(g.Where(x => x.CumulativeGpa.HasValue).Average(x => x.CumulativeGpa!.Value), 2)
+                        : (decimal?)null
                 }).ToList();
 
             var table = new PublicationTableDto
@@ -93,16 +102,21 @@ namespace PAWS.Api.Controllers
         }
 
         [HttpGet("faculty-report")]
+        [RequirePermission("Reports.View")]
         public IActionResult GetFacultyReport(string cycle)
         {
+            if (string.IsNullOrWhiteSpace(cycle))
+                return BadRequest(ErrorResponses.Validation("Cycle is required", new ValidationError { Field = "cycle", Issue = "Cycle must be provided" }));
+
+            var students = _context.Students.ToList();
             var report = new FacultyReportDto
             {
                 ReportingCycle = cycle,
                 ExecutiveSummary = new { message = "PAWS program is demonstrating measurable student engagement and academic outcomes." },
-                ParticipationSummary = _context.Students.Count(),
+                ParticipationSummary = students.Count,
                 ComplianceSummary = _context.StudentRequirementStatuses.Where(r => r.RequirementCycle == cycle).Count(),
-                AcademicSummary = _context.Students.Average(s => s.CumulativeGpa),
-                EquityRuralitySummary = _context.Students.GroupBy(s => s.RucaCategory).Select(g => new { g.Key, Count = g.Count() }),
+                AcademicSummary = students.Any(s => s.CumulativeGpa.HasValue) ? Math.Round(students.Where(s => s.CumulativeGpa.HasValue).Average(s => s.CumulativeGpa!.Value), 2) : null,
+                EquityRuralitySummary = students.GroupBy(s => s.RucaCategory).Select(g => new { g.Key, Count = g.Count() }),
                 RiskSummary = "See risk-signals endpoint"
             };
 

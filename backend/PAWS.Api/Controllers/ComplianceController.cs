@@ -15,17 +15,31 @@ namespace PAWS.Api.Controllers
         }
 
         [HttpGet("dashboard")]
-        public IActionResult GetDashboard()
+        public IActionResult GetDashboard(string cycle)
         {
-            var total = _context.StudentRequirementStatuses.Count();
-            var completed = _context.StudentRequirementStatuses.Count(x => x.Status == "Completed" || x.Status == "Waived");
-            var rate = total == 0 ? 0 : (int)((double)completed / total * 100);
+            var data = _context.StudentRequirementStatuses
+                .Where(r => r.RequirementCycle == cycle)
+                .ToList();
+
+            var total = data.Count;
+            var completed = data.Count(x => x.Status == "Completed" || x.Status == "Waived");
+
+            var byStudent = data
+                .GroupBy(r => r.StudentId)
+                .Select(g => new
+                {
+                    studentId = g.Key,
+                    total = g.Count(),
+                    completed = g.Count(x => x.Status == "Completed" || x.Status == "Waived"),
+                    complianceRate = g.Count() == 0 ? 0 : (int)((double)g.Count(x => x.Status == "Completed" || x.Status == "Waived") / g.Count() * 100)
+                });
 
             return Ok(new
             {
-                totalRequirements = total,
+                total,
                 completed,
-                complianceRate = rate
+                complianceRate = total == 0 ? 0 : (int)((double)completed / total * 100),
+                byStudent
             });
         }
     }

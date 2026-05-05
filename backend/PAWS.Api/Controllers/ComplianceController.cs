@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using PAWS.Api.Data;
+using PAWS.Api.Security;
 
 namespace PAWS.Api.Controllers
 {
@@ -15,6 +16,7 @@ namespace PAWS.Api.Controllers
         }
 
         [HttpGet("dashboard")]
+        [RequirePermission("Compliance.View")]
         public IActionResult GetDashboard(string cycle)
         {
             var data = _context.StudentRequirementStatuses

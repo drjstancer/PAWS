@@ -29,6 +29,13 @@ namespace PAWS.Api.Data
         public DbSet<StudentEventParticipation> StudentEventParticipations => Set<StudentEventParticipation>();
         public DbSet<AlumniOutcome> AlumniOutcomes => Set<AlumniOutcome>();
 
+        public DbSet<AppUser> AppUsers => Set<AppUser>();
+        public DbSet<AppRole> AppRoles => Set<AppRole>();
+        public DbSet<AppPermission> AppPermissions => Set<AppPermission>();
+        public DbSet<UserRoleAssignment> UserRoleAssignments => Set<UserRoleAssignment>();
+        public DbSet<RolePermissionAssignment> RolePermissionAssignments => Set<RolePermissionAssignment>();
+        public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Student>().HasIndex(s => s.MuId).IsUnique();

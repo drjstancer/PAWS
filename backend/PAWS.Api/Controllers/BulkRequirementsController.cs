@@ -1,6 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using PAWS.Api.Data;
-using PAWS.Api.Models;
 
 namespace PAWS.Api.Controllers
 {
@@ -8,48 +6,13 @@ namespace PAWS.Api.Controllers
     [Route("api/requirements/bulk")]
     public class BulkRequirementsController : ControllerBase
     {
-        private readonly PawsDbContext _context;
-
-        public BulkRequirementsController(PawsDbContext context)
-        {
-            _context = context;
-        }
-
         [HttpPost("generate")]
-        public IActionResult GenerateBulk(string program, string classification, string cycle)
+        public IActionResult GenerateBulk()
         {
-            var students = _context.Students
-                .Where(s => s.ProgramTrack == program && s.Classification == classification)
-                .ToList();
-
-            foreach (var student in students)
+            return StatusCode(410, new
             {
-                var applicable = _context.RequirementApplicabilities
-                    .Where(r => r.ProgramTrack == program && r.Classification == classification)
-                    .ToList();
-
-                foreach (var app in applicable)
-                {
-                    bool exists = _context.StudentRequirementStatuses.Any(s =>
-                        s.StudentId == student.Id &&
-                        s.RequirementId == app.RequirementId &&
-                        s.RequirementCycle == cycle);
-
-                    if (!exists)
-                    {
-                        _context.StudentRequirementStatuses.Add(new StudentRequirementStatus
-                        {
-                            StudentId = student.Id,
-                            RequirementId = app.RequirementId,
-                            RequirementCycle = cycle,
-                            Status = "Not Started"
-                        });
-                    }
-                }
-            }
-
-            _context.SaveChanges();
-            return Ok("Bulk requirements generated");
+                message = "This legacy endpoint has been retired. Use POST /api/v1/requirements/bulk-generate instead."
+            });
         }
     }
 }

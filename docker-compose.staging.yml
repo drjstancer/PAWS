@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+  paws-sql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: paws-staging-sql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "PAWS_Staging_StrongPassword_2026!"
+      MSSQL_PID: "Developer"
+    ports:
+      - "14333:1433"
+    volumes:
+      - paws_sql_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P PAWS_Staging_StrongPassword_2026! -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  paws-api:
+    build:
+      context: ./backend/PAWS.Api
+      dockerfile: Dockerfile
+    container_name: paws-staging-api
+    depends_on:
+      paws-sql:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Staging"
+      ConnectionStrings__DefaultConnection: "Server=paws-sql,1433;Database=PAWS_Staging;User Id=sa;Password=PAWS_Staging_StrongPassword_2026!;TrustServerCertificate=True;"
+      PAWS_SEED_DEMO_DATA: "true"
+    ports:
+      - "5080:8080"
+
+  paws-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: paws-staging-frontend
+    depends_on:
+      - paws-api
+    environment:
+      VITE_API_BASE_URL: "http://localhost:5080"
+    ports:
+      - "5174:80"
+
+volumes:
+  paws_sql_data:

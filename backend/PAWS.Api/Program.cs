@@ -15,8 +15,16 @@ builder.Services.AddDbContext<PawsDbContext>(options =>
 
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<AuditService>();
+builder.Services.AddScoped<ReportService>();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<PawsDbContext>();
+    db.Database.Migrate();
+    DbInitializer.Seed(db);
+}
 
 app.UseSwagger();
 app.UseSwaggerUI();
@@ -29,5 +37,7 @@ app.MapGet("/api/v1/me", (ICurrentUserService currentUser) =>
 {
     return Results.Ok(currentUser.User);
 });
+
+app.MapControllers();
 
 app.Run();

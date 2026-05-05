@@ -41,21 +41,32 @@ namespace PAWS.Api.Controllers.V1
 
             foreach (var c in courses)
             {
-                if (c.CreditHours <= 0 || c.GradePoints == null)
+                var courseLabel = $"{c.CourseSubject} {c.CourseNumber}".Trim();
+
+                if (c.CreditHours <= 0)
                 {
-                    warnings.Add($"Course {c.CourseCode} excluded due to missing credit or grade points");
+                    warnings.Add($"Course {courseLabel} excluded due to invalid credit hours");
                     continue;
                 }
 
-                var points = c.GradePoints.Value * c.CreditHours;
+                decimal? weightedGradePoints = c.GradePointsEarned;
+                if (weightedGradePoints == null && c.PerCreditGradeValue != null)
+                    weightedGradePoints = c.PerCreditGradeValue.Value * c.CreditHours;
+
+                if (weightedGradePoints == null)
+                {
+                    warnings.Add($"Course {courseLabel} excluded due to missing grade points");
+                    continue;
+                }
+
                 totalCredits += c.CreditHours;
-                totalPoints += points;
+                totalPoints += weightedGradePoints.Value;
                 totalCount++;
 
-                if (c.IsScienceMath)
+                if (c.CountsTowardScienceMathGpa)
                 {
                     sciCredits += c.CreditHours;
-                    sciPoints += points;
+                    sciPoints += weightedGradePoints.Value;
                     sciCount++;
                 }
             }
@@ -105,7 +116,8 @@ namespace PAWS.Api.Controllers.V1
                     AcademicYear = request.AcademicYear,
                     Term = request.Term,
                     CumulativeGpa = result.CumulativeGpa,
-                    ScienceMathGpa = result.ScienceMathGpa
+                    ScienceMathGpa = result.ScienceMathGpa,
+                    GpaDataSource = "CourseRecord Calculation"
                 });
             }
 
